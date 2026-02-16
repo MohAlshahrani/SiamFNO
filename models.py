@@ -179,14 +179,42 @@ class SiamFNO(nn.Module):
         pad = z.shape[-1] // 2
         return nn.functional.conv2d(x, z, padding=pad, groups=z.shape[0])
     
-
-
     def forward(self, template, search):
         z = self.backbone(template)
         x = self.backbone(search)
-        z = self.adjust(z)
+        return x,z
+    
+class FNO_Model(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.backbone = FNO(
+            n_modes=(16,16),            # Number of Fourier modes to keep in each dimension
+            hidden_channels=64,         # Hidden layer width
+            in_channels=6,              # Input channels: feture maps of template and search and a mask centered around the location of the object
+            out_channels=1,             # Output channels: 20 timesteps × 2 coordinates
+            n_layers=4                  # 
+        )
 
-        if self.mode == "valid":
-            return self.xcorr_valid(z, x)
-        else:
-            return self.xcorr_full(z, x)
+
+    def xcorr_valid(self, z, x):
+        # z: BxCxkxk, x: BxCxHxW
+        B, C, k, _ = z.shape
+        _, _, H, W = x.shape
+        x = x.view(1, B*C, H, W)
+        z = z.view(B*C, 1, k, k)
+        out = F.conv2d(x, z, groups=B*C)
+        out = out.view(B, C, out.shape[-2], out.shape[-1])
+        # Sum over channels --> final single-channel response
+        return out.sum(dim=1, keepdim=True)
+
+    def xcorr_full(self, z, x):
+        pad = z.shape[-1] // 2
+        return nn.functional.conv2d(x, z, padding=pad, groups=z.shape[0])
+    
+    def forward(self, template, search, mask):
+        phi = self.backbone(template, search, mask)
+        return phi
+        
+ 
+    
+    
