@@ -209,7 +209,7 @@ class SiamFNO(nn.Module):
         mask = create_gaussian_response(object_location, f_s.shape[-2], f_s.shape[-1], device=f_s.device)
         fno_input = torch.cat([f_s,f_t, mask], dim=1) # make sure the dim=1 is correct.
         phi = self.backbone(fno_input)
-        #TO DO: insert warpping module here to warp the search feature map using the learned deformation operator phi.
+        #TODO: insert warpping module here to warp the search feature map using the learned deformation operator phi.
         return phi
         
  
