@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import alexnet
 from neuralop.models import FNO
+from utils import create_gaussian_response
 
 class SiamFCBackbone(nn.Module):
     def __init__(self, in_ch=1):
@@ -187,32 +188,20 @@ class SiamFNO(nn.Module):
 class FNO_Model(nn.Module):
     def __init__(self):
         super().__init__()
+        self.siam = SiamFNO()
         self.backbone = FNO(
             n_modes=(15,15),            # Number of Fourier modes to keep in each dimension
             hidden_channels=64,         # Hidden layer width
             in_channels=513,            # Input channels: depth of feature maps (2)(256) + mask (1)
-            out_channels=1,             # Output channels: 20 timesteps × 2 coordinates
+            out_channels=1,             # Output channels: 
             n_layers=4                  # 
         )
 
-
-    def xcorr_valid(self, z, x):
-        # z: BxCxkxk, x: BxCxHxW
-        B, C, k, _ = z.shape
-        _, _, H, W = x.shape
-        x = x.view(1, B*C, H, W)
-        z = z.view(B*C, 1, k, k)
-        out = F.conv2d(x, z, groups=B*C)
-        out = out.view(B, C, out.shape[-2], out.shape[-1])
-        # Sum over channels --> final single-channel response
-        return out.sum(dim=1, keepdim=True)
-
-    def xcorr_full(self, z, x):
-        pad = z.shape[-1] // 2
-        return nn.functional.conv2d(x, z, padding=pad, groups=z.shape[0])
-    
-    def forward(self, template, search, mask):
-        phi = self.backbone(template, search, mask)
+    def forward(self, template, search, object_location):
+        f_t,f_s = self.siam(template, search)
+        mask = create_gaussian_response(object_location, f_s.shape[-2], f_s.shape[-1], device=f_s.device)
+        fno_input = torch.cat([f_s,f_t, mask], dim=1)
+        phi = self.backbone(fno_input)
         return phi
         
  
