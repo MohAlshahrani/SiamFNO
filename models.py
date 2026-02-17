@@ -188,9 +188,9 @@ class FNO_Model(nn.Module):
     def __init__(self):
         super().__init__()
         self.backbone = FNO(
-            n_modes=(16,16),            # Number of Fourier modes to keep in each dimension
+            n_modes=(15,15),            # Number of Fourier modes to keep in each dimension
             hidden_channels=64,         # Hidden layer width
-            in_channels=6,              # Input channels: feture maps of template and search and a mask centered around the location of the object
+            in_channels=513,            # Input channels: depth of feature maps (2)(256) + mask (1)
             out_channels=1,             # Output channels: 20 timesteps × 2 coordinates
             n_layers=4                  # 
         )
