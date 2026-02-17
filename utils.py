@@ -94,6 +94,33 @@ def crop_patch(img, center, size):
     patch[patch_y1:patch_y2, patch_x1:patch_x2] = img[y1:y2, x1:x2]
     return patch
 
+import torch
+
+def crop_patch_feat(feat_map: torch.Tensor, center, size: int):
+    """
+    Crop square patch centered at (x, y) from a 2D tensor.
+    feat_map: (H, W) tensor
+    center: (x, y)
+    size: int, patch size
+    """
+    x, y = map(int, center)
+    half = size // 2
+    H, W = feat_map.shape[-2], feat_map.shape[-1]
+
+    # bounds in source feature map
+    x1, y1 = max(0, x - half), max(0, y - half)
+    x2, y2 = min(W, x + half), min(H, y + half)
+
+    # allocate patch on same device/dtype
+    patch = torch.zeros(size, size, dtype=feat_map.dtype, device=feat_map.device)
+
+    # bounds in destination patch
+    patch_y1, patch_y2 = half - (y - y1), half + (y2 - y)
+    patch_x1, patch_x2 = half - (x - x1), half + (x2 - x)
+
+    patch[patch_y1:patch_y2, patch_x1:patch_x2] = feat_map[y1:y2, x1:x2]
+    return patch
+
 def create_gaussian_response(disp, response_size, search_size, template_size, sigma=2, device='cpu'):
     """
     disp: Bx2 tensor of (dx, dy) in pixels in search patch

@@ -15,7 +15,7 @@ from utils import create_gaussian_response, create_ce_target
     #     epoch_loss = 0
     #     for t, s, disp in tqdm(loader, desc=f"Epoch {e+1}/{epochs}"):
     #         t, s, disp = t.to(device), s.to(device), disp.to(device)
-    #         resp = model(t, s)
+    #         resp = model(t, s)s
     #         resp_norm = (resp - resp.mean()) / resp.std()
     #         B, _, H, W = resp.shape
     #         gt = create_gaussian_response(disp, H, search_size, template_size, sigma, device)
@@ -39,7 +39,9 @@ from utils import create_gaussian_response, create_ce_target
     #     print(f" Saved checkpoint: {ckpt_path}\n")
     # return model
 
-# implementation of SiamFC with Forier Neural Operator (FNO) to learn deformation operator. 
+# ---------------------------------------------------------------------------------------- #
+# implementation of SiamFC with Forier Neural Operator (FNO) to learn deformation operator.#
+# ---------------------------------------------------------------------------------------- # 
 def train_siamfno(model, loader, epochs=5, template_size=127, search_size=255, sigma=2, device='cuda', checkpoint_dir="/content/drive/MyDrive/SiameseTracker/checkpoints"):
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     model.to(device)
@@ -48,21 +50,21 @@ def train_siamfno(model, loader, epochs=5, template_size=127, search_size=255, s
         model.train()
         epoch_loss = 0
         #TODO: adjust the location values returend by the dataloader to be pixel coords of the object in template image. 
-        for t, s, location in tqdm(loader, desc=f"Epoch {e+1}/{epochs}"):
-            t, s, location = t.to(device), s.to(device), location.to(device)
+        for t, s, disp in tqdm(loader, desc=f"Epoch {e+1}/{epochs}"):
+            t, s, disp = t.to(device), s.to(device), disp.to(device)
+            # print(t.shape, s.shape, disp.shape) # t and s should be Bx1xHxW, disp should be Bx2 (dx, dy)
             # the model is FNO_Model()
-            phi = model(t, s,location)
-
-            #TODO: insert warpping module here 
-        
-
+            resp = model(t, s)
+            resp_norm = (resp - resp.mean()) / resp.std()
+            B, _, H, W = resp.shape
+            gt = create_gaussian_response(disp, H, search_size, template_size, sigma, device)
             loss = F.mse_loss(resp_norm, gt) # some loss terms should be added <<<<<<<<<<<<<<<<<<<
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
         print(f"Epoch {e+1}: Loss={epoch_loss/len(loader):.4f}")
-        
+
         ckpt_path = os.path.join(checkpoint_dir, f"epoch_{e+1:03d}.pth")
         avg_loss = epoch_loss / len(loader)
         checkpoint = {
@@ -71,7 +73,6 @@ def train_siamfno(model, loader, epochs=5, template_size=127, search_size=255, s
             "optimizer_state": optimizer.state_dict(),
             "avg_loss": avg_loss,
         }
-
         torch.save(checkpoint, ckpt_path)
         print(f" Saved checkpoint: {ckpt_path}\n")
     return model

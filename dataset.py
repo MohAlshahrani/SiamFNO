@@ -175,18 +175,19 @@ class CLUSTLandmarkDataset(Dataset):
 
         ## uncomment the following lines if you want to crop patches around the target ##
 
-        # bbox_t = (s["template_center"][0], s["template_center"][1], 50, 50) 
-        # bbox_s = (s["search_center"][0], s["search_center"][1], 50, 50)
-        # t_patch, _ = siamfc_crop_and_resize(img_t, bbox_t)
-        # _, s_patch = siamfc_crop_and_resize(img_s, bbox_s)
+        bbox_t = (s["template_center"][0], s["template_center"][1], 50, 50) 
+        bbox_s = (s["search_center"][0], s["search_center"][1], 50, 50)
+        t_patch, _ = siamfc_crop_and_resize(img_t, bbox_t)
+        _, s_patch = siamfc_crop_and_resize(img_s, bbox_s)
 
         ####################################################################################
         ## if working with FNO, we should pass the whole frames instead of cropped frames.##
         ####################################################################################
         
-        template_img = torch.tensor(img_t, dtype=torch.float32).unsqueeze(0) / 255.0
-        search_img = torch.tensor(img_s, dtype=torch.float32).unsqueeze(0) / 255.0
+        template_img = torch.tensor(t_patch, dtype=torch.float32).unsqueeze(0) / 255.0
+        search_img = torch.tensor(s_patch, dtype=torch.float32).unsqueeze(0) / 255.0
         disp = torch.tensor(s["gt_disp"], dtype=torch.float32)
         object_location = torch.tensor(s["template_center"], dtype=torch.float32)
 
-        return template_img, search_img, object_location, disp
+        # return template_img, search_img, object_location, disp
+        return template_img, search_img, disp

@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from dataset import CLUSTLandmarkDataset
-from models import SiamFCAlexNet
-from engine import train_siamfc
+from models import SiamFCAlexNet, SiamFNO
+from engine import train_siamfno
 
 # ---------------------------
 # Example usage for training
@@ -19,6 +19,6 @@ if __name__ == "__main__":
     loader = DataLoader(dataset, batch_size=8, shuffle=False)
     
     # model = SiamFC()
-    model = SiamFCAlexNet()
+    model = SiamFNO()
     
-    train_siamfc(model, loader, epochs=50, checkpoint_dir = "C:\\Users\\MohAl\\repos\\SiamFNO\\checkpoints")
+    train_siamfno(model, loader, epochs=50, checkpoint_dir = "C:\\Users\\MohAl\\repos\\SiamFNO\\checkpoints")
