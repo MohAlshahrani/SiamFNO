@@ -25,36 +25,36 @@ class SiamFCBackbone(nn.Module):
     def forward(self, x):
         return self.features(x)
 
-class SiamFC(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.backbone = SiamFCBackbone()
+# class SiamFC(nn.Module):
+    # def __init__(self):
+    #     super().__init__()
+    #     self.backbone = SiamFCBackbone()
 
-    def xcorr_depthwise(self, z, x):
-        """
-        z: template feature, [B, C, Hk, Wk]
-        x: search feature,   [B, C, Hx, Wx]
-        """
-        B, C, Hk, Wk = z.shape
-        _, _, Hx, Wx = x.shape
+    # def xcorr_depthwise(self, z, x):
+    #     """
+    #     z: template feature, [B, C, Hk, Wk]
+    #     x: search feature,   [B, C, Hx, Wx]
+    #     """
+    #     B, C, Hk, Wk = z.shape
+    #     _, _, Hx, Wx = x.shape
 
-        # reshape for grouped convolution
-        x = x.view(1, B * C, Hx, Wx)
-        z = z.view(B * C, 1, Hk, Wk)
+    #     # reshape for grouped convolution
+    #     x = x.view(1, B * C, Hx, Wx)
+    #     z = z.view(B * C, 1, Hk, Wk)
 
-        # grouped convolution with groups = B*C
-        out = F.conv2d(x, z, groups=B*C)
+    #     # grouped convolution with groups = B*C
+    #     out = F.conv2d(x, z, groups=B*C)
 
-        # reshape back
-        out = out.view(B, C, out.size(-2), out.size(-1))
-        return out.sum(dim=1, keepdim=True)  # sum over channels
+    #     # reshape back
+    #     out = out.view(B, C, out.size(-2), out.size(-1))
+    #     return out.sum(dim=1, keepdim=True)  # sum over channels
 
-    def forward(self, z, x):
-        f_z = self.backbone(z)
-        f_x = self.backbone(x)
-        out = self.xcorr_depthwise(f_z, f_x)
-        out = torch.sigmoid(out)
-        return out
+    # def forward(self, z, x):
+    #     f_z = self.backbone(z)
+    #     f_x = self.backbone(x)
+    #     out = self.xcorr_depthwise(f_z, f_x)
+    #     out = torch.sigmoid(out)
+    #     return out
 
 class SiamFCAlexNet(nn.Module):
     def __init__(self, mode="valid"):
@@ -123,7 +123,10 @@ class SiamFCAlexNet(nn.Module):
         else:
             return self.xcorr_full(z, x)
 
-class SiamFNO(nn.Module):
+# ------------------------------- #
+#         SiamFC for FNO          #
+# ------------------------------- #
+class SiamFC(nn.Module):
     def __init__(self, mode="valid"):
         super().__init__()
 
@@ -185,10 +188,14 @@ class SiamFNO(nn.Module):
         x = self.backbone(search)
         return x,z
     
-class FNO_Model(nn.Module):
+
+class SiamFNO(nn.Module):
+    """ This is the main model that combines SiamFC and FNO.
+ The output of the SiamFC is fed into the FNO to learn the
+ deformation operator.    """
     def __init__(self):
         super().__init__()
-        self.siam = SiamFNO()
+        self.siam = SiamFC()
         self.backbone = FNO(
             n_modes=(15,15),            # Number of Fourier modes to keep in each dimension
             hidden_channels=64,         # Hidden layer width

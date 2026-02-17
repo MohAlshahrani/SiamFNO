@@ -100,7 +100,7 @@ class CLUSTLandmarkDataset(Dataset):
         return t_patch, s_patch, gt_disp
 
 ## No Rsolution mapping is required ###
-
+#TODO: adjust the location values returend by the dataloader to be pixel coords of the object in template image. 
 class CLUSTLandmarkDataset(Dataset):
     def __init__(self, root_dir, template_size=127, search_size=255):
         """
