@@ -150,7 +150,7 @@ class CLUSTLandmarkDataset(Dataset):
                     if fid_prev not in img_map or fid_curr not in img_map:
                         continue
 
-                    disp = (x_curr - x_prev, y_curr - y_prev)
+                    disp = (x_curr - x_prev, y_curr - y_prev) # calculate displacement in pixel coords
 
                     self.samples.append({
                         "template_path": img_map[fid_prev],
@@ -158,8 +158,8 @@ class CLUSTLandmarkDataset(Dataset):
                         "template_center": (x_prev, y_prev),
                         # "search_center": (x_prev, y_prev),  # crop around old pos
                         "search_center": (x_curr, y_curr),  # crop around old pos
-                        # "gt_disp": disp,
-                        "object_location": (x_prev, y_prev), # location of the object in the template image (pixel coords)
+                        "gt_disp": disp,
+                        # "object_location": (x_prev, y_prev), # location of the object in the template image (pixel coords)
                         "seq_name": seq_name,
                     })
 
@@ -186,6 +186,7 @@ class CLUSTLandmarkDataset(Dataset):
         
         template_img = torch.tensor(img_t, dtype=torch.float32).unsqueeze(0) / 255.0
         search_img = torch.tensor(img_s, dtype=torch.float32).unsqueeze(0) / 255.0
-        object_location = torch.tensor(s["object_location"], dtype=torch.float32)
+        disp = torch.tensor(s["gt_disp"], dtype=torch.float32)
+        object_location = torch.tensor(s["template_center"], dtype=torch.float32)
 
-        return template_img, search_img, object_location
+        return template_img, search_img, object_location, disp

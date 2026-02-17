@@ -204,13 +204,37 @@ class SiamFNO(nn.Module):
             n_layers=4                   
         )
 
+    def warp_feature_map(feat: torch.Tensor, phi: torch.Tensor) -> torch.Tensor:
+        """
+        feat:  (B, C, H, W) feature map
+        theta: (B, 2, 3) affine matrices in normalized coordinates
+        mapping output -> input coordinates
+
+        returns: warped feature map of shape (B, C, H, W)
+        """
+        B, C, H, W = feat.shape
+        warped = F.grid_sample(
+            feat,
+            phi,
+            mode="bilinear",
+            padding_mode="zeros",
+            align_corners=False,
+            )  
+        return warped
+
     def forward(self, template, search, object_location):
+        """
+        pass template and search to SiamFC to get feature maps, then concatenate with a Gaussian mask centered
+         at the object location in the template image, and feed into FNO to get the deformation
+         field phi. Finally, warp the search feature map using phi to get the aligned feature
+         map. Then return the warped search feature map and the template feature map (for loss computation).
+        """
         f_t,f_s = self.siam(template, search)
         mask = create_gaussian_response(object_location, f_s.shape[-2], f_s.shape[-1], device=f_s.device)
         fno_input = torch.cat([f_s,f_t, mask], dim=1) # make sure the dim=1 is correct.
         phi = self.backbone(fno_input)
-        #TODO: insert warpping module here to warp the search feature map using the learned deformation operator phi.
-        return phi
+        f_s_warped = self.warp_feature_map(f_t, phi)
+        return f_s_warped,f_s
         
  
     
