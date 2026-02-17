@@ -198,17 +198,18 @@ class SiamFNO(nn.Module):
         self.siam = SiamFC()
         self.backbone = FNO(
             n_modes=(15,15),            # Number of Fourier modes to keep in each dimension
-            hidden_channels=64,         # Hidden layer width
+            hidden_channels=64,         # Hidden layer width:
             in_channels=513,            # Input channels: depth of feature maps (2)(256) + mask (1)
             out_channels=1,             # Output channels: 
-            n_layers=4                  # 
+            n_layers=4                   
         )
 
     def forward(self, template, search, object_location):
         f_t,f_s = self.siam(template, search)
         mask = create_gaussian_response(object_location, f_s.shape[-2], f_s.shape[-1], device=f_s.device)
-        fno_input = torch.cat([f_s,f_t, mask], dim=1)
+        fno_input = torch.cat([f_s,f_t, mask], dim=1) # make sure the dim=1 is correct.
         phi = self.backbone(fno_input)
+        #TO DO: insert warpping module here to warp the search feature map using the learned deformation operator phi.
         return phi
         
  
