@@ -306,8 +306,8 @@ class SiamFNO(nn.Module):
         # phi shape is B, 2, H, W (where H, W is the spatial dimension of the input)
         f_t_warped = self.warp_with_fno_displacement(f_t, phi)
         xcorr = self.xcorr_valid(f_t_warped,f_s)
-        return xcorr
-        
+
+        return xcorr        
  
     
     

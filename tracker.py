@@ -6,7 +6,9 @@ from utils import (
     siamfc_crop_and_resize, get_peak_coords_new
 )
 
-def track_sequence(model, frames, init_coord, template_size=127, search_size=255, device='cuda'):
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+def track_sequence(model, frames, init_coord, template_size=127, search_size=255, device=device):
     model.eval()
     prev_center = init_coord
     trajectory = [init_coord]
@@ -29,7 +31,7 @@ def track_sequence_folder(
     template_size=127,
     search_size=255,
     eta = 0.5,
-    device='cuda'):
+    device=device):
     """
     seq_folder: path to sequence folder with 'images/'
     init_coord: (x, y) landmark coordinate in **pixels** on frame 0
@@ -41,6 +43,7 @@ def track_sequence_folder(
     print(f"Tracking {N} frames from: {seq_folder}")
     model.to(device)
     model.eval()
+    print(f"Initial coordinate: {init_coord}")
     prev_center = init_coord
     trajectory = [init_coord]
 
@@ -50,12 +53,15 @@ def track_sequence_folder(
         resp_dummy = model(dummy_t, dummy_s)
         H = resp_dummy.shape[-1]
         window = create_cosine_window(H, device=device)
+    
 
     frame_prev = cv2.imread(img_files[0], cv2.IMREAD_GRAYSCALE)
     bbox_t = (init_coord[0], init_coord[1], 55, 55) 
     # keep the template fixed
     template_np, _ = siamfc_crop_and_resize(frame_prev, bbox_t)
-    
+
+    print("Starting tracking...")
+    print(f'Frame 0: {trajectory[0]}   (Initial position)')
     with torch.no_grad():
         for i in range(1, N):
             # crop template from previous frame
@@ -75,6 +81,9 @@ def track_sequence_folder(
 
             # get peak in frame coordinates
             x_new, y_new = get_peak_coords_new(resp, prev_center, template_size, search_size, 8)
+            # x_new_new, y_new_new = get_peak_coords_new(resp_new, prev_center, template_size, search_size, 8)
+            print(f'Frame {i}: ({x_new:.2f}, {y_new:.2f})') 
+                #   (new: {x_new_new:.2f}, {y_new_new:.2f})')
             trajectory.append((x_new, y_new))
             prev_center = (x_new, y_new)
             frame_prev = frame_curr

@@ -4,6 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import os
 
+
 def get_subwindow(im, pos, model_sz, original_sz):
     """
     Extracts a square subwindow from the image.
@@ -121,7 +122,7 @@ def crop_patch_feat(feat_map: torch.Tensor, center, size: int):
     patch[patch_y1:patch_y2, patch_x1:patch_x2] = feat_map[y1:y2, x1:x2]
     return patch
 
-def create_gaussian_response(disp, response_size, search_size, template_size, sigma=2, device='cpu'):
+def create_gaussian_response(disp, response_size, search_size, template_size, sigma, device):
     """
     disp: Bx2 tensor of (dx, dy) in pixels in search patch
     response_size: H=W of correlation map
@@ -146,7 +147,7 @@ def create_gaussian_response(disp, response_size, search_size, template_size, si
     response = response.unsqueeze(1) # Bx1xHxW
     return response
 
-def create_ce_target(disp, response_size, search_size, template_size, device='cpu'):
+def create_ce_target(disp, response_size, search_size, template_size, device):
     """
     disp: Bx2 (dx, dy) displacement in pixel coords
     return: B (class indices)
@@ -228,7 +229,7 @@ def load_sequence_images(seq_folder):
     )
     return img_files
 
-def create_cosine_window(size, device="cpu"):
+def create_cosine_window(size, device):
     """
     size: int, response map size (17, 31, etc.)
     """
